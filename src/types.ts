@@ -11,6 +11,6 @@ export type Task = {
     columnId: Id;
     content: string;
     description: string;
-    priority: 'low' | 'medium' | 'high';
-    difficulty: 'easy' | 'medium' | 'hard';
+    priority: string;
+    difficulty: string;
 };

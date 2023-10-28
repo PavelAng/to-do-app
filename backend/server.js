@@ -21,10 +21,10 @@ app.get('/tasks', async (req, res) => {
 
 app.post('/tasks', async (req, res) => {
     try {
-        const { column_id, content, description, priority, difficulty } = req.body;
+        const { columnId, content, description, priority, difficulty } = req.body;
         const { rows } = await query(
-            'INSERT INTO tasks (column_id, content, description, priority, difficulty) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [column_id, content, description, priority, difficulty]
+            'INSERT INTO tasks ("columnId", content, description, priority, difficulty) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [columnId, content, description, priority, difficulty]
         );
         res.json(rows[0]);
     } catch (err) {
@@ -36,10 +36,10 @@ app.post('/tasks', async (req, res) => {
 app.put('/tasks/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { column_id, content, description, priority, difficulty } = req.body;
+        const { columnId, content, description, priority, difficulty } = req.body;
         const { rows } = await query(
-            'UPDATE tasks SET column_id=$1, content=$2, description=$3, priority=$4, difficulty=$5 WHERE id=$6 RETURNING *',
-            [column_id, content, description, priority, difficulty, id]
+            'UPDATE tasks SET "columnId"=$1, content=$2, description=$3, priority=$4, difficulty=$5 WHERE id=$6 RETURNING *',
+            [columnId, content, description, priority, difficulty, id]
         );
         res.json(rows[0]);
     } catch (err) {

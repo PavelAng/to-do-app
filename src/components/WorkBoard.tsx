@@ -37,13 +37,13 @@ function WorkBoard() {
   useEffect(() => {
     // Fetch columns
     fetch("http://localhost:3001/columns")
-      .then(response => response.json())
-      .then(data => setColumns(data));
+      .then((response) => response.json())
+      .then((data) => setColumns(data));
 
     // Fetch tasks
     fetch("http://localhost:3001/tasks")
-      .then(response => response.json())
-      .then(data => setTasks(data));
+      .then((response) => response.json())
+      .then((data) => setTasks(data));
   }, []);
 
   return (
@@ -136,53 +136,64 @@ function WorkBoard() {
       id: generateId(),
       columnId,
       content: `Task ${tasks.length + 1}`,
-      description: "",
-      priority: "low",
-      difficulty: "medium"
+      description: "description",
+      priority: "Low",   // Use selected priority
+      difficulty: "Easy", // Use selected difficulty
     };
 
     fetch("http://localhost:3001/tasks", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(newTask)
+      body: JSON.stringify(newTask),
     })
-    .then(response => response.json())
-    .then(data => {
-      setTasks([...tasks, data]);
-    });
+      .then((response) => response.json())
+      .then((data) => {
+        setTasks([...tasks, data]);
+      });
   }
 
   function deleteTask(id: Id) {
     fetch(`http://localhost:3001/tasks/${id}`, {
-      method: "DELETE"
-    })
-    .then(() => {
+      method: "DELETE",
+    }).then(() => {
       const newTasks = tasks.filter((task) => task.id !== id);
       setTasks(newTasks);
     });
   }
 
-  function updateTask(id: Id, content: string) {
-    const taskToUpdate = tasks.find(t => t.id === id);
+  function updateTask(
+    id: Id,
+    content: string,
+    description: string,
+    priority: string,
+    difficulty: string
+  ) {
+    const taskToUpdate = tasks.find((t) => t.id === id);
     if (taskToUpdate) {
-      const updatedTask = { ...taskToUpdate, content };
+      const updatedTask = {
+        ...taskToUpdate,
+        content,
+        description,
+        priority,
+        difficulty,
+      };
       fetch(`http://localhost:3001/tasks/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedTask)
+        body: JSON.stringify(updatedTask),
       })
-      .then(response => response.json())
-      .then(data => {
-        const newTasks = tasks.map((task) => {
-          if (task.id !== id) return task;
-          return data; // Assuming backend returns updated task
+        .then((response) => response.json())
+        .then((data) => {
+          const newTasks = tasks.map((task) => {
+            if (task.id !== id) return task;
+            return data; // Assuming backend returns updated task
+          });
+          setTasks(newTasks);
         });
-        setTasks(newTasks);
-      });
     }
   }
 
@@ -195,21 +206,20 @@ function WorkBoard() {
     fetch("http://localhost:3001/columns", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(columnToAdd)
+      body: JSON.stringify(columnToAdd),
     })
-    .then(response => response.json())
-    .then(data => {
-      setColumns([...columns, data]);
-    });
+      .then((response) => response.json())
+      .then((data) => {
+        setColumns([...columns, data]);
+      });
   }
 
   function deleteColumn(id: Id) {
     fetch(`http://localhost:3001/columns/${id}`, {
-      method: "DELETE"
-    })
-    .then(() => {
+      method: "DELETE",
+    }).then(() => {
       const filteredColumns = columns.filter((col) => col.id !== id);
       setColumns(filteredColumns);
 
@@ -219,24 +229,24 @@ function WorkBoard() {
   }
 
   function updateColumn(id: Id, title: string) {
-    const columnToUpdate = columns.find(col => col.id === id);
+    const columnToUpdate = columns.find((col) => col.id === id);
     if (columnToUpdate) {
       const updatedColumn = { ...columnToUpdate, title };
       fetch(`http://localhost:3001/columns/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(updatedColumn)
+        body: JSON.stringify(updatedColumn),
       })
-      .then(response => response.json())
-      .then(data => {
-        const newColumns = columns.map((col) => {
-          if (col.id !== id) return col;
-          return data; // Assuming backend returns updated column
+        .then((response) => response.json())
+        .then((data) => {
+          const newColumns = columns.map((col) => {
+            if (col.id !== id) return col;
+            return data; // Assuming backend returns updated column
+          });
+          setColumns(newColumns);
         });
-        setColumns(newColumns);
-      });
     }
   }
 

@@ -13,7 +13,13 @@ interface Props {
   updateColumn: (id: Id, title: string) => void;
 
   createTask: (columnId: Id) => void;
-  updateTask: (id: Id, content: string) => void;
+  updateTask: (
+    id: Id,
+    content: string,
+    description: string,
+    priority: string,
+    difficulty: string
+  ) => void;
   deleteTask: (id: Id) => void;
   tasks: Task[];
 }
@@ -65,7 +71,7 @@ function ColumnContainer(props: Props) {
     opacity-30
     border-2
     border-yellow
-    w-[400px]
+    w-[355px]
     h-[650px]
     max-h-[650px]
     rounded-md
@@ -80,7 +86,7 @@ function ColumnContainer(props: Props) {
       style={style}
       className="
       bg-columnBackgroundColor
-      w-[400px]
+      w-[355px]
       h-[650px]
     max-h-[650px]
       rounded-md
