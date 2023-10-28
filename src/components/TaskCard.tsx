@@ -20,7 +20,7 @@ interface Props {
 function TaskCard({ task, deleteTask, updateTask }: Props) {
   const [mouseIsOver, setMouseIsOver] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  
+
   const {
     setNodeRef,
     attributes,
@@ -69,7 +69,8 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
         {...listeners}
         className="bg-mainBackgroundColor p-2.5 h-[200px] 
         min-h-[200px] w-[340px] min-w-[340px] items-center flex flex-col text-left rounded-xl 
-        hover:ring-2 hover:ring-inset hover:ring-yellow cursor-grab relative ">
+        hover:ring-2 hover:ring-inset hover:ring-yellow cursor-grab relative "
+      >
         <textarea
           className="w-full pl-2 resize-none border-none 
             rounded bg-transparent text-white text-lg font-bold focus:outline-none"
@@ -100,7 +101,8 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
               task.priority,
               task.difficulty
             )
-          }></textarea>
+          }
+        ></textarea>
         <textarea
           className="w-full resize-none border-none 
             rounded bg-transparent text-white opacity-60 pl-1 pt-1 focus:outline-none"
@@ -117,45 +119,46 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
         />
         <div className="flex flex-row gap-2 p-3">
           <div>
-          <label className="font-semibold">Priority:</label>
-          <select
-            className="bg-mainBackgroundColor text-white"
-            value={task.priority}
-            onChange={(e) =>
-              updateTask(
-                task.id,
-                task.content,
-                task.description,
-                e.target.value,
-                task.difficulty
-              )
-            }>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-          </select>
+            <label className="font-semibold">Priority:</label>
+            <select
+              className="bg-mainBackgroundColor text-white"
+              value={task.priority}
+              onChange={(e) =>
+                updateTask(
+                  task.id,
+                  task.content,
+                  task.description,
+                  e.target.value,
+                  task.difficulty
+                )
+              }
+            >
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+          <div>
+            <label className="font-semibold">Difficulty:</label>
+            <select
+              className="bg-mainBackgroundColor text-white"
+              value={task.difficulty}
+              onChange={(e) =>
+                updateTask(
+                  task.id,
+                  task.content,
+                  task.description,
+                  task.priority,
+                  e.target.value
+                )
+              }
+            >
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="font-semibold">Difficulty:</label>
-          <select
-          className="bg-mainBackgroundColor text-white"
-            value={task.difficulty}
-            onChange={(e) =>
-              updateTask(
-                task.id,
-                task.content,
-                task.description,
-                task.priority,
-                e.target.value
-              )
-            }>
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-          </select>
-        </div>
-        </div>
-        
       </div>
     );
   }
@@ -174,17 +177,27 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
       }}
       onMouseLeave={() => {
         setMouseIsOver(false);
-      }}>
+      }}
+    >
       <div
         className="
       h-[90%] w-full overflow-y-auto overflow-x-hidden
       whitespace-pre-wrap 
-      ">
+      "
+      >
         <div className="font-bold text-lg pl-2">{task.content}</div>
         <div className="opacity-60 px-1 py-[32px]">{task.description}</div>
         <div className="flex flex-row gap-10 ">
-          <div className="flex flex-row pt-1 pl-2"> <p className="font-semibold">Priority: </p>{task.priority}</div>
-          <div className="flex flex-row pt-1 pl-2"> <p className="font-semibold">Difficulty: </p>{task.difficulty} </div>
+          <div className="flex flex-row pt-1 pl-2">
+            {" "}
+            <p className="font-semibold">Priority: </p>
+            {task.priority}
+          </div>
+          <div className="flex flex-row pt-1 pl-2">
+            {" "}
+            <p className="font-semibold">Difficulty: </p>
+            {task.difficulty}{" "}
+          </div>
         </div>
       </div>
       {mouseIsOver && (
@@ -194,7 +207,8 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
           }}
           className="stroke-white absolute right-4  
           bg-columnBackgroundColor 
-          p-1 rounded opacity-70 hover:opacity-100">
+          p-1 rounded opacity-70 hover:opacity-100"
+        >
           <TrashIcon />
         </button>
       )}

@@ -38,7 +38,7 @@ function ColumnContainer(props: Props) {
 
   const tasksIds = useMemo(() => {
     return tasks.map((task) => task.id);
-  },[tasks]);
+  }, [tasks]);
 
   const {
     setNodeRef,
@@ -76,7 +76,8 @@ function ColumnContainer(props: Props) {
     max-h-[650px]
     rounded-md
     flex
-    flex-col"></div>
+    flex-col"
+      ></div>
     );
   }
 
@@ -92,7 +93,8 @@ function ColumnContainer(props: Props) {
       rounded-md
       flex
       flex-col
-  ">
+  "
+    >
       <div
         {...attributes}
         {...listeners}
@@ -112,7 +114,8 @@ function ColumnContainer(props: Props) {
       flex
       items-center
       justify-between
-      ">
+      "
+      >
         <div>
           {!editMode && column.title}
           {editMode && (
@@ -145,7 +148,8 @@ function ColumnContainer(props: Props) {
            rounded
            px-1
            py-2
-           ">
+           "
+        >
           <TrashIcon />
         </button>
       </div>
@@ -172,7 +176,8 @@ function ColumnContainer(props: Props) {
       active:bg-black"
         onClick={() => {
           createTask(column.id);
-        }}>
+        }}
+      >
         <PlusIcon />
         Add Task
       </button>

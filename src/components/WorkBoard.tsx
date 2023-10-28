@@ -32,15 +32,13 @@ function WorkBoard() {
         distance: 10,
       },
     })
-  ); 
+  );
 
   useEffect(() => {
-    // Fetch columns
     fetch("http://localhost:3001/columns")
       .then((response) => response.json())
       .then((data) => setColumns(data));
 
-    // Fetch tasks
     fetch("http://localhost:3001/tasks")
       .then((response) => response.json())
       .then((data) => setTasks(data));
@@ -57,12 +55,14 @@ function WorkBoard() {
         overflow-x-auto
         overflow-y-hidden
         px-[10px]
-    ">
+    "
+    >
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
-        onDragOver={onDragOver}>
+        onDragOver={onDragOver}
+      >
         <div className="m-auto flex gap-2">
           <div className="flex gap-2">
             <SortableContext items={columnsId}>
@@ -96,7 +96,8 @@ function WorkBoard() {
         hover:ring-2
         flex
         gap-2
-        ">
+        "
+          >
             <PlusIcon />
             Add Column
           </button>
@@ -132,13 +133,13 @@ function WorkBoard() {
   );
 
   function createTask(columnId: Id) {
-    const newTask: Task = {
-      id: generateId(),
+    const newTask: Omit<Task, "id"> = {
       columnId,
       content: `Task ${tasks.length + 1}`,
-      description: "description",
-      priority: "Low",   // Use selected priority
-      difficulty: "Easy", // Use selected difficulty
+      description: "",
+      priority: "low",
+      difficulty: "medium",
+      position: tasks.length,
     };
 
     fetch("http://localhost:3001/tasks", {
@@ -148,9 +149,15 @@ function WorkBoard() {
       },
       body: JSON.stringify(newTask),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.json();
+      })
       .then((data) => {
         setTasks([...tasks, data]);
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
       });
   }
 
@@ -190,7 +197,7 @@ function WorkBoard() {
         .then((data) => {
           const newTasks = tasks.map((task) => {
             if (task.id !== id) return task;
-            return data; // Assuming backend returns updated task
+            return data;
           });
           setTasks(newTasks);
         });
@@ -198,9 +205,9 @@ function WorkBoard() {
   }
 
   function createNewColumn() {
-    const columnToAdd: Column = {
-      id: generateId(),
+    const columnToAdd: Omit<Column, "id"> = {
       title: `Column ${columns.length + 1}`,
+      position: columns.length,
     };
 
     fetch("http://localhost:3001/columns", {
@@ -210,9 +217,15 @@ function WorkBoard() {
       },
       body: JSON.stringify(columnToAdd),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.json();
+      })
       .then((data) => {
         setColumns([...columns, data]);
+      })
+      .catch((error) => {
+        console.error("There was a problem with the fetch operation:", error);
       });
   }
 
@@ -243,7 +256,7 @@ function WorkBoard() {
         .then((data) => {
           const newColumns = columns.map((col) => {
             if (col.id !== id) return col;
-            return data; // Assuming backend returns updated column
+            return data;
           });
           setColumns(newColumns);
         });
@@ -268,20 +281,51 @@ function WorkBoard() {
 
     if (!over) return;
 
-    const activeColumnId = active.id;
-    const overColumnId = over.id;
+    const activeId = active.id;
+    const overId = over.id;
 
-    if (activeColumnId === overColumnId) return;
+    if (activeId === overId) return;
 
-    setColumns((columns) => {
-      const activeColumnIndex = columns.findIndex(
-        (col) => col.id === activeColumnId
+    if (
+      active.data.current?.type === "Column" &&
+      over.data.current?.type === "Column"
+    ) {
+      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
+      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+
+      const reorderedColumns = arrayMove(
+        columns,
+        activeColumnIndex,
+        overColumnIndex
       );
-      const overColumnIndex = columns.findIndex(
-        (col) => col.id === overColumnId
-      );
+      updateColumnsInDb(reorderedColumns);
+      setColumns(reorderedColumns);
+    } else if (
+      active.data.current?.type === "Task" &&
+      over.data.current?.type === "Task"
+    ) {
+      const activeTaskIndex = tasks.findIndex((task) => task.id === activeId);
+      const overTaskIndex = tasks.findIndex((task) => task.id === overId);
 
-      return arrayMove(columns, activeColumnIndex, overColumnIndex); //swapwa activeindex s overindex w arraya columns
+      if (tasks[activeTaskIndex].columnId !== tasks[overTaskIndex].columnId) {
+        tasks[activeTaskIndex].columnId = tasks[overTaskIndex].columnId;
+      }
+
+      const reorderedTasks = arrayMove(tasks, activeTaskIndex, overTaskIndex);
+      updateTasksInDb(reorderedTasks);
+      setTasks(reorderedTasks);
+    }
+  }
+
+  function updateColumnsInDb(reorderedColumns: Column[]) {
+    reorderedColumns.forEach((column, index) => {
+      fetch(`http://localhost:3001/columns/${column.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...column, position: index }),
+      });
     });
   }
 
@@ -304,12 +348,16 @@ function WorkBoard() {
         const activeIndex = tasks.findIndex((t) => t.id === activeId);
         const overIndex = tasks.findIndex((t) => t.id === overId);
 
-        if (tasks[activeIndex].columnId != tasks[overIndex].columnId) {
+        if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
           tasks[activeIndex].columnId = tasks[overIndex].columnId;
-          return arrayMove(tasks, activeIndex, overIndex - 1);
+          const reorderedTasks = arrayMove(tasks, activeIndex, overIndex - 1);
+          updateTasksInDb(reorderedTasks);
+          return reorderedTasks;
         }
 
-        return arrayMove(tasks, activeIndex, overIndex);
+        const reorderedTasks = arrayMove(tasks, activeIndex, overIndex);
+        updateTasksInDb(reorderedTasks);
+        return reorderedTasks;
       });
     }
 
@@ -321,14 +369,23 @@ function WorkBoard() {
 
         tasks[activeIndex].columnId = overId;
 
-        return arrayMove(tasks, activeIndex, activeIndex);
+        updateTasksInDb(tasks);
+        return tasks;
       });
     }
   }
-}
 
-function generateId() {
-  return Math.floor(Math.random() * 10001);
+  function updateTasksInDb(reorderedTasks: Task[]) {
+    reorderedTasks.forEach((task, index) => {
+      fetch(`http://localhost:3001/tasks/${task.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ...task, position: index }),
+      });
+    });
+  }
 }
 
 export default WorkBoard;
