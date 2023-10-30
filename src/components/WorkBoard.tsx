@@ -136,9 +136,9 @@ function WorkBoard() {
     const newTask: Omit<Task, "id"> = {
       columnId,
       content: `Task ${tasks.length + 1}`,
-      description: "",
-      priority: "low",
-      difficulty: "medium",
+      description: "Description",
+      priority: "Low",
+      difficulty: "Easy",
       position: tasks.length,
     };
 
