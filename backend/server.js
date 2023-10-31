@@ -9,7 +9,7 @@ const PORT = 3001;
 app.use(cors());
 app.use(json());
 
-app.get("/tasks", async (req, res) => {
+app.get("/tasks", async (res) => {
   try {
     const { rows } = await query("SELECT * FROM tasks ORDER BY position");
     res.json(rows);
@@ -63,7 +63,7 @@ app.delete("/tasks/:id", async (req, res) => {
   }
 });
 
-app.get("/columns", async (req, res) => {
+app.get("/columns", async (res) => {
   try {
     const { rows } = await query("SELECT * FROM columns ORDER BY position ASC");
     res.json(rows);
