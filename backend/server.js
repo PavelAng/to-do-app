@@ -15,7 +15,7 @@ app.get("/tasks", async (res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
@@ -30,7 +30,7 @@ app.post("/tasks", async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
@@ -46,7 +46,7 @@ app.put("/tasks/:id", async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
@@ -59,7 +59,7 @@ app.delete("/tasks/:id", async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
@@ -69,7 +69,7 @@ app.get("/columns", async (res) => {
     res.json(rows);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
@@ -83,7 +83,7 @@ app.post("/columns", async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
@@ -98,7 +98,7 @@ app.put("/columns/:id", async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
@@ -112,7 +112,7 @@ app.delete("/columns/:id", async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(400).json({ error: "Internal Server Error" });
+    res.status(400).json();
   }
 });
 
