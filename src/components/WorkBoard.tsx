@@ -1,6 +1,6 @@
 // WorkBoard.tsx
 import PlusIcon from "../icons/PlusIcon";
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Column, Id, Task } from "../types";
 import ColumnContainer from "./ColumnContainer";
 import {
@@ -11,38 +11,38 @@ import {
   useSensors,
   useSensor,
   PointerSensor,
-  DragOverEvent,
+  DragOverEvent
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
+import { useBoard } from "./BoardContext";
 
 function WorkBoard() {
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { state, dispatch } = useBoard();
 
-  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
-
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const columnsId = useMemo(
+    () => state.columns.map((col) => col.id),
+    [state.columns]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 10,
-      },
+        distance: 10
+      }
     })
   );
 
   useEffect(() => {
     fetch("http://localhost:3001/columns")
       .then((response) => response.json())
-      .then((data) => setColumns(data));
+      .then((data) => dispatch({ type: "SET_COLUMNS", payload: data }));
 
     fetch("http://localhost:3001/tasks")
       .then((response) => response.json())
-      .then((data) => setTasks(data));
-  }, []);
+      .then((data) => dispatch({ type: "SET_TASKS", payload: data }));
+  }, [dispatch]);
 
   return (
     <div
@@ -66,7 +66,7 @@ function WorkBoard() {
         <div className="m-auto flex gap-2">
           <div className="flex gap-2">
             <SortableContext items={columnsId}>
-              {columns.map((col) => (
+              {state.columns.map((col) => (
                 <ColumnContainer
                   key={col.id}
                   column={col}
@@ -75,7 +75,7 @@ function WorkBoard() {
                   createTask={createTask}
                   deleteTask={deleteTask}
                   updateTask={updateTask}
-                  tasks={tasks.filter((task) => task.columnId === col.id)}
+                  tasks={state.tasks.filter((task) => task.columnId === col.id)}
                 />
               ))}
             </SortableContext>
@@ -105,24 +105,32 @@ function WorkBoard() {
 
         {createPortal(
           <DragOverlay>
-            {activeColumn && (
+            {state.activeColumn && (
               <ColumnContainer
-                column={activeColumn}
+                column={state.activeColumn}
                 deleteColumn={deleteColumn}
                 updateColumn={updateColumn}
                 createTask={createTask}
                 deleteTask={deleteTask}
                 updateTask={updateTask}
-                tasks={tasks.filter(
-                  (task) => task.columnId === activeColumn.id
+                tasks={state.tasks.filter(
+                  (task) => task.columnId === state.activeColumn!.id
                 )}
               />
             )}
-            {activeTask && (
+            {state.activeTask && (
               <TaskCard
-                task={activeTask}
-                deleteTask={deleteTask}
-                updateTask={updateTask}
+                task={state.activeTask as Task}
+                deleteTask={deleteTask as (id: Id) => void}
+                updateTask={
+                  updateTask as (
+                    id: Id,
+                    content: string,
+                    description: string,
+                    priority: string,
+                    difficulty: string
+                  ) => void
+                }
               />
             )}
           </DragOverlay>,
@@ -135,26 +143,26 @@ function WorkBoard() {
   function createTask(columnId: Id) {
     const newTask: Omit<Task, "id"> = {
       columnId,
-      content: `Task ${tasks.length + 1}`,
+      content: `Task ${state.tasks.length + 1}`,
       description: "Description",
       priority: "Low",
       difficulty: "Easy",
-      position: tasks.length,
+      position: state.tasks.length
     };
 
     fetch("http://localhost:3001/tasks", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(newTask),
+      body: JSON.stringify(newTask)
     })
       .then((response) => {
         if (!response.ok) throw new Error("Network response was not ok");
         return response.json();
       })
       .then((data) => {
-        setTasks([...tasks, data]);
+        return dispatch({ type: "SET_TASKS", payload: [...state.tasks, data] });
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
@@ -163,11 +171,20 @@ function WorkBoard() {
 
   function deleteTask(id: Id) {
     fetch(`http://localhost:3001/tasks/${id}`, {
-      method: "DELETE",
-    }).then(() => {
-      const newTasks = tasks.filter((task) => task.id !== id);
-      setTasks(newTasks);
-    });
+      method: "DELETE"
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            `Error deleting task with ID ${id}: ${response.statusText}`
+          );
+        }
+        const newTasks = state.tasks.filter((task) => task.id !== id);
+        dispatch({ type: "DELETE_TASK", payload: newTasks });
+      })
+      .catch((error) => {
+        console.error("Error deleting task:", error);
+      });
   }
 
   function updateTask(
@@ -177,52 +194,52 @@ function WorkBoard() {
     priority: string,
     difficulty: string
   ) {
-    const taskToUpdate = tasks.find((t) => t.id === id);
+    const taskToUpdate = state.tasks.find((t) => t.id === id);
     if (taskToUpdate) {
       const updatedTask = {
         ...taskToUpdate,
         content,
         description,
         priority,
-        difficulty,
+        difficulty
       };
+
       fetch(`http://localhost:3001/tasks/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(updatedTask),
+        body: JSON.stringify(updatedTask)
       })
         .then((response) => response.json())
         .then((data) => {
-          const newTasks = tasks.map((task) => {
+          const newTasks = state.tasks.map((task) => {
             if (task.id !== id) return task;
             return data;
           });
-          setTasks(newTasks);
+          dispatch({ type: "UPDATE_TASK", payload: newTasks });
         });
     }
   }
-
   function createNewColumn() {
     const columnToAdd: Omit<Column, "id"> = {
-      title: `Column ${columns.length + 1}`,
-      position: columns.length,
+      title: `Column ${state.columns.length + 1}`,
+      position: state.columns.length
     };
 
     fetch("http://localhost:3001/columns", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(columnToAdd),
+      body: JSON.stringify(columnToAdd)
     })
       .then((response) => {
         if (!response.ok) throw new Error("Network response was not ok");
         return response.json();
       })
       .then((data) => {
-        setColumns([...columns, data]);
+        dispatch({ type: "ADD_COLUMN", payload: [...state.columns, data] });
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
@@ -231,52 +248,59 @@ function WorkBoard() {
 
   function deleteColumn(id: Id) {
     fetch(`http://localhost:3001/columns/${id}`, {
-      method: "DELETE",
+      method: "DELETE"
     }).then(() => {
-      const filteredColumns = columns.filter((col) => col.id !== id);
-      setColumns(filteredColumns);
+      const filteredColumns = state.columns.filter((col) => col.id !== id);
+      dispatch({ type: "DELETE_COLUMN", payload: filteredColumns });
 
-      const newTasks = tasks.filter((t) => t.columnId !== id);
-      setTasks(newTasks);
+      const newTasks = state.tasks.filter((t) => t.columnId !== id);
+      dispatch({ type: "DELETE_TASKS_BY_COLUMN_ID", payload: newTasks });
     });
   }
 
   function updateColumn(id: Id, title: string) {
-    const columnToUpdate = columns.find((col) => col.id === id);
+    const columnToUpdate = state.columns.find((col) => col.id === id);
     if (columnToUpdate) {
       const updatedColumn = { ...columnToUpdate, title };
       fetch(`http://localhost:3001/columns/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(updatedColumn),
+        body: JSON.stringify(updatedColumn)
       })
         .then((response) => response.json())
         .then((data) => {
-          const newColumns = columns.map((col) => {
+          const newColumns = state.columns.map((col) => {
             if (col.id !== id) return col;
             return data;
           });
-          setColumns(newColumns);
+          dispatch({ type: "UPDATE_COLUMN", payload: newColumns });
         });
     }
   }
 
   function onDragStart(event: DragStartEvent) {
     if (event.active.data.current?.type === "Column") {
-      setActiveColumn(event.active.data.current.column);
+      dispatch({
+        type: "SET_ACTIVE_COLUMN",
+        payload: event.active.data.current.column
+      });
       return;
     }
     if (event.active.data.current?.type === "Task") {
-      setActiveTask(event.active.data.current.task);
+      dispatch({
+        type: "SET_ACTIVE_TASK",
+        payload: event.active.data.current.task
+      });
       return;
     }
   }
 
   function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
-    setActiveTask(null);
+    dispatch({ type: "SET_ACTIVE_COLUMN", payload: null });
+    dispatch({ type: "SET_ACTIVE_TASK", payload: null });
+
     const { active, over } = event;
 
     if (!over) return;
@@ -290,30 +314,44 @@ function WorkBoard() {
       active.data.current?.type === "Column" &&
       over.data.current?.type === "Column"
     ) {
-      const activeColumnIndex = columns.findIndex((col) => col.id === activeId);
-      const overColumnIndex = columns.findIndex((col) => col.id === overId);
+      const activeColumnIndex = state.columns.findIndex(
+        (col) => col.id === activeId
+      );
+      const overColumnIndex = state.columns.findIndex(
+        (col) => col.id === overId
+      );
 
       const reorderedColumns = arrayMove(
-        columns,
+        state.columns,
         activeColumnIndex,
         overColumnIndex
       );
       updateColumnsInDb(reorderedColumns);
-      setColumns(reorderedColumns);
+      dispatch({ type: "SET_COLUMNS", payload: reorderedColumns });
     } else if (
       active.data.current?.type === "Task" &&
       over.data.current?.type === "Task"
     ) {
-      const activeTaskIndex = tasks.findIndex((task) => task.id === activeId);
-      const overTaskIndex = tasks.findIndex((task) => task.id === overId);
+      const activeTaskIndex = state.tasks.findIndex(
+        (task) => task.id === activeId
+      );
+      const overTaskIndex = state.tasks.findIndex((task) => task.id === overId);
 
-      if (tasks[activeTaskIndex].columnId !== tasks[overTaskIndex].columnId) {
-        tasks[activeTaskIndex].columnId = tasks[overTaskIndex].columnId;
+      if (
+        state.tasks[activeTaskIndex].columnId !==
+        state.tasks[overTaskIndex].columnId
+      ) {
+        state.tasks[activeTaskIndex].columnId =
+          state.tasks[overTaskIndex].columnId;
       }
 
-      const reorderedTasks = arrayMove(tasks, activeTaskIndex, overTaskIndex);
+      const reorderedTasks = arrayMove(
+        state.tasks,
+        activeTaskIndex,
+        overTaskIndex
+      );
       updateTasksInDb(reorderedTasks);
-      setTasks(reorderedTasks);
+      dispatch({ type: "SET_TASKS", payload: reorderedTasks });
     }
   }
 
@@ -322,9 +360,9 @@ function WorkBoard() {
       fetch(`http://localhost:3001/columns/${column.id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ ...column, position: index }),
+        body: JSON.stringify({ ...column, position: index })
       });
     });
   }
@@ -344,34 +382,33 @@ function WorkBoard() {
     if (!isActiveATask) return;
 
     if (isActiveATask && isOverATask) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const overIndex = tasks.findIndex((t) => t.id === overId);
+      const activeIndex = state.tasks.findIndex((t) => t.id === activeId);
+      const overIndex = state.tasks.findIndex((t) => t.id === overId);
 
-        if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
-          tasks[activeIndex].columnId = tasks[overIndex].columnId;
-          const reorderedTasks = arrayMove(tasks, activeIndex, overIndex - 1);
-          updateTasksInDb(reorderedTasks);
-          return reorderedTasks;
-        }
+      let reorderedTasks;
 
-        const reorderedTasks = arrayMove(tasks, activeIndex, overIndex);
-        updateTasksInDb(reorderedTasks);
-        return reorderedTasks;
-      });
+      if (
+        state.tasks[activeIndex].columnId !== state.tasks[overIndex].columnId
+      ) {
+        state.tasks[activeIndex].columnId = state.tasks[overIndex].columnId;
+        reorderedTasks = arrayMove(state.tasks, activeIndex, overIndex - 1);
+      } else {
+        reorderedTasks = arrayMove(state.tasks, activeIndex, overIndex);
+      }
+      updateTasksInDb(reorderedTasks);
+      dispatch({ type: "SET_TASKS", payload: reorderedTasks });
     }
 
     const isOverAColumn = over.data.current?.type === "Column";
 
     if (isActiveATask && isOverAColumn) {
-      setTasks((tasks) => {
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-
-        tasks[activeIndex].columnId = overId;
-
-        updateTasksInDb(tasks);
-        return tasks;
-      });
+      const updatedTasks = [...state.tasks];
+      const activeTask = updatedTasks.find((t) => t.id === activeId);
+      if (activeTask) {
+        activeTask.columnId = overId;
+      }
+      updateTasksInDb(updatedTasks);
+      dispatch({ type: "SET_TASKS", payload: updatedTasks });
     }
   }
 
@@ -380,9 +417,9 @@ function WorkBoard() {
       fetch(`http://localhost:3001/tasks/${task.id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ ...task, position: index }),
+        body: JSON.stringify({ ...task, position: index })
       });
     });
   }

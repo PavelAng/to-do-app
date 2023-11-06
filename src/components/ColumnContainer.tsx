@@ -6,6 +6,7 @@ import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import PlusIcon from "../icons/PlusIcon";
 import TaskCard from "./TaskCard";
+import { useBoard } from "./BoardContext";
 
 interface Props {
   column: Column;
@@ -24,6 +25,11 @@ interface Props {
   tasks: Task[];
 }
 function ColumnContainer(props: Props) {
+  const { state } = useBoard();
+
+  const tasksIds = useMemo(() => {
+    return state.tasks.map((task) => task.id);
+  }, [state.tasks]);
   const {
     column,
     deleteColumn,
@@ -31,14 +37,14 @@ function ColumnContainer(props: Props) {
     createTask,
     tasks,
     deleteTask,
-    updateTask,
+    updateTask
   } = props;
 
   const [editMode, setEditMode] = useState(false);
 
-  const tasksIds = useMemo(() => {
-    return tasks.map((task) => task.id);
-  }, [tasks]);
+  // const tasksIds = useMemo(() => {
+  //   return tasks.map((task) => task.id);
+  // }, [tasks]);
 
   const {
     setNodeRef,
@@ -46,19 +52,19 @@ function ColumnContainer(props: Props) {
     listeners,
     transform,
     transition,
-    isDragging,
+    isDragging
   } = useSortable({
     id: column.id,
     data: {
       type: "Column",
-      column,
+      column
     },
-    disabled: editMode,
+    disabled: editMode
   });
 
   const style = {
     transition,
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(transform)
   };
 
   if (isDragging) {

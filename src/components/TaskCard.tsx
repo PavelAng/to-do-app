@@ -4,6 +4,7 @@ import { Id, Task } from "../types";
 import TrashIcon from "../icons/TrashIcon";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useBoard } from "./BoardContext";
 
 interface Props {
   task: Task;
@@ -17,7 +18,8 @@ interface Props {
   ) => void;
 }
 
-function TaskCard({ task, deleteTask, updateTask }: Props) {
+function TaskCard({ task }: Props) {
+  const { state, dispatch } = useBoard();
   const [mouseIsOver, setMouseIsOver] = useState(false);
   const [editMode, setEditMode] = useState(false);
 
@@ -27,19 +29,39 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
     listeners,
     transform,
     transition,
-    isDragging,
+    isDragging
   } = useSortable({
     id: task.id,
     data: {
       type: "Task",
-      task,
+      task
     },
-    disabled: editMode,
+    disabled: editMode
   });
 
   const style = {
     transition,
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(transform)
+  };
+
+  const deleteTask = (id: Id) => {
+    const updatedTasks = state.tasks.filter((task) => task.id !== id);
+    dispatch({ type: "DELETE_TASK", payload: updatedTasks });
+  };
+
+  const updateTask = (
+    id: Id,
+    content: string,
+    description: string,
+    priority: string,
+    difficulty: string
+  ) => {
+    const updatedTasks = state.tasks.map((task) =>
+      task.id === id
+        ? { ...task, content, description, priority, difficulty }
+        : task
+    );
+    dispatch({ type: "UPDATE_TASK", payload: updatedTasks });
   };
 
   const toggleEditMode = () => {
@@ -83,7 +105,6 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
               (e.relatedTarget.tagName === "SELECT" ||
                 e.relatedTarget.tagName === "TEXTAREA")
             ) {
-              // Do not turn off edit mode if the focus is on a <select> or <textarea> element.
               return;
             }
             toggleEditMode();
